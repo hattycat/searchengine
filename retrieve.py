@@ -6,15 +6,11 @@ import shelve
 import math
 import numpy as np
 from posting import Posting
-
 N_docs = 38679
-
 table = {}
 with open('index_table.pk1', 'rb') as f:
     table = pickle.load(f)
 index = open('index.bin' , 'rb')
-
-
 def compute_tf_idf(tokens, tf, df, N = N_docs):
     tf_idf = []
     for i in range(len(tokens)):
@@ -28,8 +24,6 @@ def compute_tf_idf(tokens, tf, df, N = N_docs):
         # Return the original vector if magnitude is 0
         norm_idf = tf_idf
     return tf_idf
-
-
 def make_query(string):
     index = open('index.bin', 'rb')
     english_text = re.sub(r"[^a-z0-9\s]", " ", string)
@@ -69,9 +63,8 @@ def make_query(string):
             index.seek(index_tuple[0])
             data = index.read(index_tuple[1])
             posting_list = pickle.loads(data)
-            #print(posting_list)
+            print(posting_list)
             doc_freq.append(len(posting_list))
-
             #print(obj)
             #print()
         except KeyError:
@@ -112,8 +105,6 @@ def make_query(string):
         #print(doc_ids[str(doc_id)])
         url_list.append(doc_ids[str(doc_id)])
     return url_list
-
-
 if __name__ == "__main__":
     while True:
         string = input ("Query: ").lower()
