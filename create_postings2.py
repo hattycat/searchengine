@@ -69,7 +69,7 @@ def add_posting(token_map, doc_id, words):
     global data
     global term_count
 
-    #track word positions 
+    # track word positions
     word_positions = {}
     for pos, word in enumerate(words):
         token = ps.stem(word)
