@@ -9,7 +9,7 @@ import lxml
 import os
 import gc
 gc.collect()
-from create_postings2 import index_doc, create_new_semifile, data, file_count, term_count
+from create_postings2 import index_doc, data, file_count, term_count
 
 start_folder = Path('DEV')
 

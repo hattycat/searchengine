@@ -23,6 +23,7 @@ if os.path.exists("doc_id.db"):
 terms = shelve.open('terms')
 doc_ids = shelve.open('doc_id')
 unique_docs = shelve.open("unique_docs")
+ps = PorterStemmer()
 
 def index_doc(url, html, doc_count, run = True):
     global term_count
@@ -47,7 +48,6 @@ def index_doc(url, html, doc_count, run = True):
     text = soup.get_text(separator = " ", strip = True).lower()
     english_text = re.sub(r"[^a-z0-9\s]", " ", text)
     words = english_text.split()
-    ps = PorterStemmer()
     token_map = {}
     for word in words:
         token = ps.stem(word)
@@ -59,23 +59,37 @@ def index_doc(url, html, doc_count, run = True):
             token_map[token] += 1
         else:
             token_map[token] = 1
-    add_posting(token_map, doc_count)
-    #print(doc_count)
+    
+    add_posting(token_map, doc_count, words)
 
 
 
-def add_posting(token_map, doc_id):
+def add_posting(token_map, doc_id, words):
     global file_count
     global data
     global term_count
 
+    #track word positions 
+    word_positions = {}
+    for pos, word in enumerate(words):
+        token = ps.stem(word)
+        if len(set(token)) == 1 or (token.isdigit() and len(token) > 9):
+            continue
+        if token not in word_positions:
+            word_positions[token] = []
+        word_positions[token].append(pos)
+
     for token in token_map:
         if token not in terms:
             terms[token] = True
-            term_count +=1
-            #print(f"term count: {term_count}")
-        current_posting = Posting(doc_id, token_map[token])
-        #current_posting = (doc_id, token_map[token])
+            term_count += 1
+
+        current_posting = Posting(
+            doc_id, 
+            token_map[token], 
+            positions=word_positions.get(token, [])
+        )
+
         if token in data.keys():
             data[token].append(current_posting)
         else:
@@ -100,6 +114,4 @@ def create_new_partial(file_count):
             serialization_length = len(serialized_tuple)
             f.write(struct.pack('I', serialization_length))
             f.write(serialized_tuple)
-            #print(key)
-            #print(serialization_length)
     data.clear()
