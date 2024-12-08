@@ -41,7 +41,6 @@ for i in range(1, 12):
     #`print(partial.current_list)
 
 
-
 index = open('index.bin', 'wb')
 table = {}
 
