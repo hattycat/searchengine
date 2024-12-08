@@ -51,10 +51,6 @@ def index_doc(url, html, doc_count, run = True):
     token_map = {}
     for word in words:
         token = ps.stem(word)
-        if len(set(token)) == 1:
-            continue
-        if token.isdigit() and len(token) > 9:
-            continue
         if token in token_map.keys():
             token_map[token] += 1
         else:

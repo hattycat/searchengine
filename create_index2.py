@@ -27,11 +27,9 @@ def create_index():
             with open(file, 'r') as json_file:
                 data1 = json.load(json_file)
                 if data1['encoding'] == 'utf-8' or data1['encoding'] == 'ascii':
-                    print(f"Parsing {data1['url']}")
+                    print(f"parsing {data1['url']}")
                     index_doc(data1['url'], data1['content'], doc_count)
-                else:
-                    print(f"Skipping {data1['url']} due to unsupported encoding: {data1['encoding']}")
-                doc_count += 1  
+                    doc_count +=1
     #create partial w/ remaining data
     index_doc("", "", 0, False)
 
