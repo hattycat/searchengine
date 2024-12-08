@@ -31,7 +31,7 @@ class Partial:
 
 partial_list = []
 
-for i in range(1, 12):
+for i in range(1, 11):
     file_name = f"index{i}.bin"
     partial_list.append(Partial(file_name))
     partial_list[i-1].get_next_token()
