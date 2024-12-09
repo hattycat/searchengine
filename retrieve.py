@@ -33,17 +33,22 @@ def make_query(string):
     tokenized_query = {}
     query_list = []
     doc_freq = []
+
     for word in words:
-        token = ps.stem(word) 
+        token = ps.stem(word)
         if token in tokenized_query.keys():
             tokenized_query[token] += 1
         else:
             tokenized_query[token] = 1
             query_list.append(token)
+
     posting_list = []
     posting_map = {}
+    token_postings = {}  
     first = True
+
     if len(query_list) == 1:
+        token = query_list[0]
         try:
             index_tuple = table[token]
             index.seek(index_tuple[0])
@@ -54,9 +59,11 @@ def make_query(string):
             for i in range(min(5, len(posting_list))):
                 url_list.append(doc_ids[str(posting_list[i].doc_id)])
             return url_list
-        
+
         except KeyError:
+            print(f"Token '{token}' not found in the index.")
             return []
+
     for token in query_list:
         try:
             index_tuple = table[token]
@@ -65,12 +72,12 @@ def make_query(string):
             posting_list = pickle.loads(data)
             print(posting_list)
             doc_freq.append(len(posting_list))
-            #print(obj)
-            #print()
+            token_postings[token] = posting_list
         except KeyError:
-            for key in posting_map.keys():
-                posting_map[key].append(0)
-                continue
+            print(f"Token '{token}' not found in the index.")
+            doc_freq.append(0)  
+            continue
+
         temp_posting_map = {}
         for posting in posting_list:
             if first:
@@ -80,31 +87,39 @@ def make_query(string):
                 temp_posting_map[posting.doc_id] = posting_map[posting.doc_id]
         posting_map = temp_posting_map
         first = False
-    print(posting_map)
-    tfs = []
-    for query in query_list:
-        tfs.append(tokenized_query[query])
-    query_tf_idf = compute_tf_idf(query_list, tfs, doc_freq)
+
+    valid_terms = [query_list[i] for i in range(len(query_list)) if doc_freq[i] > 0]
+    valid_tfs = [tokenized_query[term] for term in valid_terms]
+    valid_dfs = [doc_freq[i] for i in range(len(doc_freq)) if doc_freq[i] > 0]
+
+    if not valid_terms:
+        print("No valid terms found in the query.")
+        return []
+
+    query_tf_idf = compute_tf_idf(valid_terms, valid_tfs, valid_dfs)
+
     doc_tf_idf_scores = []
     for key in posting_map.keys():
-        print(key)
-        score_tuple = (key, np.dot(query_tf_idf, compute_tf_idf(query_list, posting_map[key], doc_freq)))
-        print(score_tuple)
-        doc_tf_idf_scores.append(score_tuple)
-        #print(posting_list)
-        #print()
-    doc_tf_idf_scores = sorted(doc_tf_idf_scores, key = lambda x: (-x[1], x[0]))
-    #print(posting_list)
-    #print()
+        base_tf = [posting_map[key][valid_terms.index(term)] for term in valid_terms]
+        doc_tf_idf_scores.append(
+            (key, np.dot(query_tf_idf, compute_tf_idf(valid_terms, base_tf, valid_dfs)))
+        )
+
+    doc_tf_idf_scores = sorted(doc_tf_idf_scores, key=lambda x: (-x[1], x[0]))
+
     url_list = []
     doc_ids = shelve.open('doc_id')
-    print(doc_tf_idf_scores)
-    for i in range(min(5,len(doc_tf_idf_scores))):
+    for i in range(min(5, len(doc_tf_idf_scores))):
         doc_id = doc_tf_idf_scores[i][0]
-        #print(doc_id)
-        #print(doc_ids[str(doc_id)])
-        url_list.append(doc_ids[str(doc_id)])
+        try:
+            url_list.append(doc_ids[str(doc_id)])
+        except KeyError:
+            print(f"Document ID {doc_id} not found in doc_id.db.")
+            continue
+
     return url_list
+
+
 if __name__ == "__main__":
     while True:
         string = input ("Query: ").lower()
